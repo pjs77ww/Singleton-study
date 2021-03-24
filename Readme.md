@@ -6,7 +6,7 @@
 
 ![](./Singleton_UML_class_diagram.svg.png)
 
-#### 싱글턴을 왜 사용하는가?
+#### 싱글턴을 어떻게 사용하는가?
 
 1. **한 번도 사용하지 않는다면 아예 인스턴스를 생성하지 않는다.**
 2. **런타임에 초기화된다.**
@@ -27,6 +27,7 @@
    - 다른 스래드가 전역 데이터에 무슨 작업을 하는지 모를 때 교착상태, 경쟁상태 등 찾기 어려운 스레드 동기화 버그가 생기기 쉽다.
 4. **게으른 초기화는 제어할 수 없다**
    - 시스템을 초기화할 때 메모리 할당, 리소스 로딩 등 할 일이 많다 보니 시간이 꽤 걸릴 수 있다.
+5. **싱글통 구조가 비대해질 수 있다.**
 
 
 
@@ -101,22 +102,22 @@ private:
            // 닌텐도의 파일 IO API를 사용한다... 
        } 
    };
-   
    ```
-
+   
 3. **전체 시스템 클래스를 싱글턴으로 만든다.**
 
    ```C++
    class FileSystem {
    public:
-       static FIleSystem& instance();
+       static FIleSystem& instance()
        
        virtual ~FileSystem() {}
        virtual char* readFile(char* path) = 0;
        virtual void writeFile(char* path, char* contents) = 0;
        
-   protected:
-       FileSystem() {} 
+   private:
+       FileSystem() {}
+      	static FileSystem* instance_;
    };
    ```
 
@@ -133,7 +134,22 @@ private:
    }
    ```
 
-   
+
+
+
+### 종류
+
+#### 다이나믹 싱글턴
+
+#### 스태틱 지역 싱글턴
+
+#### 피닉스 싱글턴
+
+
+
+### 싱글턴과 Static의 차이
+
+
 
 
 
@@ -143,12 +159,65 @@ private:
 
 - 정적으로 할당되는 변수이며, 프로그램 실행 전반에 걸쳐 변수의 수명이 유지된다.
 
+#### 비동기 프로그래밍
+
+- **thread: 스레드 기반 비동기적 실행**
+
+  ```c++
+  // multi-threading
+  {
+      int result;
+      std::thread t([&] {result = 1 + 2; });  // 모든 바깥 변수를 레퍼런스로 받으므로 result 값이 변화한다.
+      t.join();
+  
+      cout << result << '\n';  
+  }
+  ```
+
+- **async, future**
+
+  ```c++
+  // task-based parallellism
+  {
+      std::future<int> future = std::async([] {return (1 + 2);});  //  auto future 쓰는게 더 간편
+      cout << future.get() << '\n';  // 3 출력
+  }
+  ```
+
+- **promise**
+
+  ```c++
+  #include <iostream>
+  #include <future>
+  #include <thread>
+  using namespace std;
+  
+  int main()
+  {
+  	// future and promsise
+  	{	
+  		std::promise<int> prom;
+  		auto future = prom.get_future();
+  
+  		auto t = std::thread([](std::promise<int>&& prom)
+  		{
+              prom.set_value(1 + 2);
+          }, std::move(prom));
+  		
+  		cout << future.get() << endl;
+  		t.join();
+  	}
+  }
+  ```
+
+  
+
 
 
 ## 참고자료
 
 - 위키백과_싱글턴 패턴 (https://ko.wikipedia.org/wiki/%EC%8B%B1%EA%B8%80%ED%84%B4_%ED%8C%A8%ED%84%B4)
 - 위키백과 정적변수(https://ko.wikipedia.org/wiki/%EC%A0%95%EC%A0%81_%EB%B3%80%EC%88%98)
-
 - 소년코딩_C++ 디자인 패턴 05. 싱글턴 패턴, Singleton Pattern (https://boycoding.tistory.com/109)
+- C++ Chapter 19.5 : 작업 기반 비동기 프로그래밍 async, future, promise (https://ansohxxn.github.io/cpp/chapter19-5/)
 
